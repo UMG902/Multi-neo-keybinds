@@ -29,7 +29,7 @@ public class KeyBindingStore {
 
             // Match the saved translation keys (e.g., "key.jump") to the actual KeyMapping objects
             for (KeyMapping mapping : mc.options.keyMappings) {
-                String name = mapping.getName();
+                String name = mapping.saveString();
                 if (data.containsKey(name)) {
                     for (int key : data.get(name)) {
                         MultiKeyRegistry.add(mapping, key);
@@ -48,7 +48,7 @@ public class KeyBindingStore {
 
             // Save using the KeyMapping's translation name as the unique ID
             for (Map.Entry<KeyMapping, List<Integer>> entry : MultiKeyRegistry.raw().entrySet()) {
-                data.put(entry.getKey().getName(), entry.getValue());
+                data.put(entry.getKey().saveString(), entry.getValue());
             }
 
             try (FileWriter writer = new FileWriter(CONFIG_FILE)) {

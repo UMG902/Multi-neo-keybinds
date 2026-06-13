@@ -8,7 +8,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-@EventBusSubscriber(modid = "multineokeybinds", value = Dist.CLIENT)
+@EventBusSubscriber(modid = "multineokeybinds", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
 public class ClientInit {
     private static boolean initialized = false;
 
