@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.umg.multineokeybinds.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "KeyMappingMixin",
+    "KeyBindsListMixin",
+    "KeyEntryMixin"
+  ],
+  "client": [
+    "KeyMappingMixin",
+    "KeyBindsListMixin",
+    "KeyEntryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
