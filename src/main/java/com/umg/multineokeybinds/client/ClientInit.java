@@ -9,16 +9,25 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 @EventBusSubscriber(modid = "multineokeybinds", value = Dist.CLIENT)
-public class ClientInit {
+public final class ClientInit {
     private static boolean initialized = false;
+
+    private ClientInit() {
+    }
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
-        // Wait until Minecraft and its options are fully loaded
-        if (!initialized && Minecraft.getInstance().options != null) {
-            initialized = true;
-            KeyBindingStore.load();
-            KeyBindingManager.init();
+        if (initialized) {
+            return;
         }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.options == null) {
+            return;
+        }
+
+        initialized = true;
+        KeyBindingStore.load();
+        KeyBindingManager.init();
     }
 }
