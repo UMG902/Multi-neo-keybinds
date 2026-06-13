@@ -10,6 +10,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.screens.options.controls.KeyBindsList;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsList.KeyEntry;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Final;
@@ -28,107 +29,111 @@ import java.util.List;
 public class KeyEntryMixin {
 
     @Shadow @Final private KeyMapping key;
+    @Shadow @Final private KeyBindsList parent;
+    @Shadow @Final private Component name;
 
     @Unique private Button multikeybinds$addButton;
-    @Unique private final List<Button> multikeybinds$bindButtons = new ArrayList<>();
     @Unique private final List<Button> multikeybinds$removeButtons = new ArrayList<>();
+    @Unique private final List<Button> multikeybinds$keyButtons = new ArrayList<>();
     @Unique private final List<Integer> multikeybinds$cachedCodes = new ArrayList<>();
 
     @Unique
     private void multikeybinds$syncButtons() {
-        if (this.multikeybinds$addButton == null) {
-            this.multikeybinds$addButton = Button.builder(Component.literal("+"), b -> {
-                Minecraft mc = Minecraft.getInstance();
-                if (mc.screen instanceof KeyBindsScreenExtension ext) {
-                    ext.multikeybinds$startListening(this.key);
-                }
-            }).bounds(0, 0, 20, 20).build();
-        }
-
         List<Integer> currentCodes = new ArrayList<>(MultiKeyRegistry.get(this.key));
 
         if (!currentCodes.equals(this.multikeybinds$cachedCodes)) {
             this.multikeybinds$cachedCodes.clear();
             this.multikeybinds$cachedCodes.addAll(currentCodes);
-
-            this.multikeybinds$bindButtons.clear();
             this.multikeybinds$removeButtons.clear();
+            this.multikeybinds$keyButtons.clear();
 
-            for (Integer code : currentCodes) {
-                final int keyCode = code;
+            for (Integer keyCode : currentCodes) {
                 InputConstants.Key inputKey = InputConstants.Type.KEYSYM.getOrCreate(keyCode);
 
-                Button bindButton = Button.builder(
+                Button keyBtn = Button.builder(
                         inputKey.getDisplayName(),
                         b -> {
-                            Minecraft mc = Minecraft.getInstance();
-                            if (mc.screen instanceof KeyBindsScreenExtension ext) {
-                                // Pass the key code to replace when rebinding
+                            if (Minecraft.getInstance().screen instanceof KeyBindsScreenExtension ext) {
                                 ext.multikeybinds$startListening(this.key, keyCode);
                             }
                         }
-                ).bounds(0, 0, 50, 20).build();
+                ).bounds(0, 0, 75, 20).build();
 
-                Button removeButton = Button.builder(
-                        Component.literal("x"),
+                Button removeBtn = Button.builder(
+                        Component.literal("✕"),
                         b -> {
                             MultiKeyRegistry.remove(this.key, keyCode);
                             KeyBindingStore.save();
                             Minecraft.getInstance().options.save();
+                            this.multikeybinds$syncButtons();
+                            if (this.parent != null) this.parent.children();
                         }
                 ).bounds(0, 0, 20, 20).build();
 
-                this.multikeybinds$bindButtons.add(bindButton);
-                this.multikeybinds$removeButtons.add(removeButton);
+                this.multikeybinds$keyButtons.add(keyBtn);
+                this.multikeybinds$removeButtons.add(removeBtn);
             }
+        }
+
+        if (this.multikeybinds$addButton == null) {
+            this.multikeybinds$addButton = Button.builder(
+                    Component.literal("+"),
+                    b -> {
+                        if (Minecraft.getInstance().screen instanceof KeyBindsScreenExtension ext) {
+                            ext.multikeybinds$startListening(this.key);
+                        }
+                    }
+            ).bounds(0, 0, 20, 20).build();
         }
     }
 
-    @Inject(method = "render", at = @At("TAIL"))
-    private void multikeybinds$renderExtraButtons(
-            GuiGraphics graphics,
-            int index,
-            int top,
-            int left,
-            int width,
-            int height,
-            int mouseX,
-            int mouseY,
-            boolean hovering,
-            float partialTick,
-            CallbackInfo ci
-    ) {
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    private void multikeybinds$renderCustom(GuiGraphics gg, int idx, int top, int left, int width,
+                                            int height, int mouseX, int mouseY, boolean hovering, float pt, CallbackInfo ci) {
+
         this.multikeybinds$syncButtons();
 
-        // Position buttons to the left of the entry, not right
-        int addX = left + width - 156;
-        int y = top - 2;
+        // Calculate the right edge using the provided width instead of the scrollbar
+        int rightEdge = left + width;
+        int addX = rightEdge - 25; // Leave a small margin from the right edge
+        int baseY = top - 2;
 
-        this.multikeybinds$addButton.setPosition(addX, y);
-        this.multikeybinds$addButton.render(graphics, mouseX, mouseY, partialTick);
+        // Draw the keybind name label
+        gg.drawString(Minecraft.getInstance().font, this.name, left, top + 6, 0xFFFFFF);
 
-        int x = left + width - 211;
-
-        for (int i = 0; i < this.multikeybinds$bindButtons.size(); i++) {
-            Button bindButton = this.multikeybinds$bindButtons.get(i);
-            Button removeButton = this.multikeybinds$removeButtons.get(i);
-
-            bindButton.setPosition(x, y);
-            bindButton.render(graphics, mouseX, mouseY, partialTick);
-
-            removeButton.setPosition(x - 22, y);
-            removeButton.render(graphics, mouseX, mouseY, partialTick);
-
-            x -= 77;
+        // Draw add button
+        if (this.multikeybinds$addButton != null) {
+            this.multikeybinds$addButton.setPosition(addX, baseY);
+            this.multikeybinds$addButton.render(gg, mouseX, mouseY, pt);
         }
+
+        // Draw each extra key on its own row
+        int keyX = addX - 25 - 75; // Position key button to the left of the add button
+        int removeX = keyX - 22;   // Position remove button to the left of the key button
+
+        for (int i = 0; i < this.multikeybinds$keyButtons.size(); i++) {
+            int rowY = baseY + (i * 20); // Stack them vertically
+
+            Button keyBtn = this.multikeybinds$keyButtons.get(i);
+            Button removeBtn = this.multikeybinds$removeButtons.get(i);
+
+            keyBtn.setPosition(keyX, rowY);
+            keyBtn.render(gg, mouseX, mouseY, pt);
+
+            removeBtn.setPosition(removeX, rowY);
+            removeBtn.render(gg, mouseX, mouseY, pt);
+        }
+
+        // Cancel the vanilla render so we don't draw overlapping vanilla buttons
+        ci.cancel();
     }
 
     @Inject(method = "children", at = @At("RETURN"), cancellable = true)
     private void multikeybinds$children(CallbackInfoReturnable<List<? extends GuiEventListener>> cir) {
         this.multikeybinds$syncButtons();
         List<GuiEventListener> list = new ArrayList<>(cir.getReturnValue());
-        list.add(this.multikeybinds$addButton);
-        list.addAll(this.multikeybinds$bindButtons);
+        if (this.multikeybinds$addButton != null) list.add(this.multikeybinds$addButton);
+        list.addAll(this.multikeybinds$keyButtons);
         list.addAll(this.multikeybinds$removeButtons);
         cir.setReturnValue(list);
     }
@@ -137,8 +142,8 @@ public class KeyEntryMixin {
     private void multikeybinds$narratables(CallbackInfoReturnable<List<? extends NarratableEntry>> cir) {
         this.multikeybinds$syncButtons();
         List<NarratableEntry> list = new ArrayList<>(cir.getReturnValue());
-        list.add(this.multikeybinds$addButton);
-        list.addAll(this.multikeybinds$bindButtons);
+        if (this.multikeybinds$addButton != null) list.add(this.multikeybinds$addButton);
+        list.addAll(this.multikeybinds$keyButtons);
         list.addAll(this.multikeybinds$removeButtons);
         cir.setReturnValue(list);
     }

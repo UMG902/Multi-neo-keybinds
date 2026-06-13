@@ -12,7 +12,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 import java.util.List;
 
-@EventBusSubscriber(modid = "multineokeybinds", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = "multineokeybinds", value = Dist.CLIENT)
 public class InputRouter {
 
     @SubscribeEvent

@@ -3,8 +3,12 @@
   "minVersion": "0.8",
   "package": "com.umg.multineokeybinds.mixin",
   "compatibilityLevel": "JAVA_21",
+  "mixins": [],
   "client": [
-    "KeyEntryMixin",
-    "KeyBindsScreenMixin"
-  ]
+    "KeyBindsScreenMixin",
+    "KeyEntryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }
