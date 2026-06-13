@@ -47,7 +47,6 @@ public class KeyEntryMixin {
 
         List<Integer> currentCodes = new ArrayList<>(MultiKeyRegistry.get(this.key));
 
-        // Force refresh if the lists don't match
         if (!currentCodes.equals(this.multikeybinds$cachedCodes)) {
             this.multikeybinds$cachedCodes.clear();
             this.multikeybinds$cachedCodes.addAll(currentCodes);
@@ -101,13 +100,14 @@ public class KeyEntryMixin {
     ) {
         this.multikeybinds$syncButtons();
 
-        int addX = left + width + 5;
+        // Position buttons to the left of the entry, not right
+        int addX = left - 25;
         int y = top - 2;
 
         this.multikeybinds$addButton.setPosition(addX, y);
         this.multikeybinds$addButton.render(graphics, mouseX, mouseY, partialTick);
 
-        int x = left + width + 30;
+        int x = left - 50;
 
         for (int i = 0; i < this.multikeybinds$bindButtons.size(); i++) {
             Button bindButton = this.multikeybinds$bindButtons.get(i);
@@ -116,10 +116,10 @@ public class KeyEntryMixin {
             bindButton.setPosition(x, y);
             bindButton.render(graphics, mouseX, mouseY, partialTick);
 
-            removeButton.setPosition(x + 52, y);
+            removeButton.setPosition(x - 22, y);
             removeButton.render(graphics, mouseX, mouseY, partialTick);
 
-            x += 77;
+            x -= 77;
         }
     }
 
