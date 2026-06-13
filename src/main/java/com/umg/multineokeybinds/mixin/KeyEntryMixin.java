@@ -47,6 +47,7 @@ public class KeyEntryMixin {
 
         List<Integer> currentCodes = new ArrayList<>(MultiKeyRegistry.get(this.key));
 
+        // Force refresh if the lists don't match
         if (!currentCodes.equals(this.multikeybinds$cachedCodes)) {
             this.multikeybinds$cachedCodes.clear();
             this.multikeybinds$cachedCodes.addAll(currentCodes);
