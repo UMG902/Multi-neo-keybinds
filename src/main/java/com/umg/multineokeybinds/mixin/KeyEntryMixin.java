@@ -60,7 +60,12 @@ public class KeyEntryMixin {
 
                 Button bindButton = Button.builder(
                         Component.literal(inputKey.getName()),
-                        b -> { }
+                        b -> {
+                            Minecraft mc = Minecraft.getInstance();
+                            if (mc.screen instanceof KeyBindsScreenExtension ext) {
+                                ext.multikeybinds$startListening(this.key);
+                            }
+                        }
                 ).bounds(0, 0, 50, 20).build();
 
                 Button removeButton = Button.builder(
