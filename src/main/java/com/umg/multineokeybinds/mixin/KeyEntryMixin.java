@@ -101,13 +101,13 @@ public class KeyEntryMixin {
         this.multikeybinds$syncButtons();
 
         // Position buttons to the left of the entry, not right
-        int addX = left - 25;
+        int addX = left + width - 156;
         int y = top - 2;
 
         this.multikeybinds$addButton.setPosition(addX, y);
         this.multikeybinds$addButton.render(graphics, mouseX, mouseY, partialTick);
 
-        int x = left - 50;
+        int x = left + width - 211;
 
         for (int i = 0; i < this.multikeybinds$bindButtons.size(); i++) {
             Button bindButton = this.multikeybinds$bindButtons.get(i);
