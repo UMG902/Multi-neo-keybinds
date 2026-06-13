@@ -7,6 +7,5 @@ import net.neoforged.fml.common.Mod;
 public class MultiNeoKeybinds {
 
     public MultiNeoKeybinds() {
-        ClientInit.init();
     }
 }

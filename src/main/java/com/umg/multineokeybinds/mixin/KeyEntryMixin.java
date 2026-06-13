@@ -59,7 +59,7 @@ public class KeyEntryMixin {
                 InputConstants.Key inputKey = InputConstants.Type.KEYSYM.getOrCreate(keyCode);
 
                 Button bindButton = Button.builder(
-                        Component.literal(inputKey.getName()),
+                        inputKey.getDisplayName(),
                         b -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.screen instanceof KeyBindsScreenExtension ext) {
@@ -126,7 +126,6 @@ public class KeyEntryMixin {
     @Inject(method = "children", at = @At("RETURN"), cancellable = true)
     private void multikeybinds$children(CallbackInfoReturnable<List<? extends GuiEventListener>> cir) {
         this.multikeybinds$syncButtons();
-
         List<GuiEventListener> list = new ArrayList<>(cir.getReturnValue());
         list.add(this.multikeybinds$addButton);
         list.addAll(this.multikeybinds$bindButtons);
@@ -137,7 +136,6 @@ public class KeyEntryMixin {
     @Inject(method = "narratables", at = @At("RETURN"), cancellable = true)
     private void multikeybinds$narratables(CallbackInfoReturnable<List<? extends NarratableEntry>> cir) {
         this.multikeybinds$syncButtons();
-
         List<NarratableEntry> list = new ArrayList<>(cir.getReturnValue());
         list.add(this.multikeybinds$addButton);
         list.addAll(this.multikeybinds$bindButtons);
