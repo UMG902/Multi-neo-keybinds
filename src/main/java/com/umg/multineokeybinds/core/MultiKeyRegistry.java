@@ -2,68 +2,73 @@ package com.umg.multineokeybinds.core;
 
 import net.minecraft.client.KeyMapping;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-public class MultiKeyRegistry {
+public final class MultiKeyRegistry {
+    private static final Map<KeyMapping, List<Integer>> REGISTRY = Collections.synchronizedMap(new IdentityHashMap<>());
 
-    private static final Map<KeyMapping, List<Integer>> MAP = new HashMap<>();
+    private MultiKeyRegistry() {
+    }
 
-    // ==================================================
-    // GET ALL KEYS FOR A KEYBIND
-    // ==================================================
     public static List<Integer> get(KeyMapping mapping) {
-        return MAP.getOrDefault(mapping, new ArrayList<>());
-    }
-
-    // ==================================================
-    // ADD A KEY TO A KEYBIND
-    // ==================================================
-    public static void add(KeyMapping mapping, int key) {
-        MAP.computeIfAbsent(mapping, k -> new ArrayList<>());
-
-        List<Integer> list = MAP.get(mapping);
-
-        if (!list.contains(key)) {
-            list.add(key);
+        synchronized (REGISTRY) {
+            List<Integer> values = REGISTRY.get(mapping);
+            return values == null ? List.of() : List.copyOf(values);
         }
     }
 
-    // ==================================================
-    // REMOVE A KEY FROM A KEYBIND
-    // ==================================================
-    public static void remove(KeyMapping mapping, int key) {
-        List<Integer> list = MAP.get(mapping);
-        if (list == null) return;
-
-        list.remove(Integer.valueOf(key));
-
-        if (list.isEmpty()) {
-            MAP.remove(mapping);
-        }
-    }
-
-    // ==================================================
-    // CLEAR ALL (optional reset button support)
-    // ==================================================
-    public static void clear(KeyMapping mapping) {
-        MAP.remove(mapping);
-    }
-
-    // ==================================================
-    // CLEAR EVERYTHING
-    // ==================================================
-    public static void clearAll() {
-        MAP.clear();
-    }
-
-    public static Set<KeyMapping> all() {
-        return MAP.keySet();
-    }
-
-    // ==================================================
-    // OPTIONAL: expose map (debug / save system later)
-    // ==================================================
     public static Map<KeyMapping, List<Integer>> raw() {
-        return MAP;
+        synchronized (REGISTRY) {
+            Map<KeyMapping, List<Integer>> copy = new LinkedHashMap<>();
+            for (Map.Entry<KeyMapping, List<Integer>> entry : REGISTRY.entrySet()) {
+                copy.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+            }
+            return copy;
+        }
+    }
+
+    public static void set(KeyMapping mapping, List<Integer> keys) {
+        synchronized (REGISTRY) {
+            ArrayList<Integer> list = new ArrayList<>();
+            for (Integer key : keys) {
+                if (key != null && !list.contains(key)) {
+                    list.add(key);
+                }
+            }
+            REGISTRY.put(mapping, list);
+        }
+    }
+
+    public static void add(KeyMapping mapping, int keyCode) {
+        synchronized (REGISTRY) {
+            List<Integer> list = REGISTRY.computeIfAbsent(mapping, k -> new ArrayList<>());
+            if (!list.contains(keyCode)) {
+                list.add(keyCode);
+            }
+        }
+    }
+
+    public static void remove(KeyMapping mapping, int keyCode) {
+        synchronized (REGISTRY) {
+            List<Integer> list = REGISTRY.get(mapping);
+            if (list == null) {
+                return;
+            }
+            list.remove(Integer.valueOf(keyCode));
+            if (list.isEmpty()) {
+                REGISTRY.remove(mapping);
+            }
+        }
+    }
+
+    public static void clear() {
+        synchronized (REGISTRY) {
+            REGISTRY.clear();
+        }
     }
 }

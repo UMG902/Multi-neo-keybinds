@@ -14,26 +14,36 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class KeyBindingStore {
+public final class KeyBindingStore {
     private static final File CONFIG_FILE = new File("config/multineokeybinds.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
+    private KeyBindingStore() {
+    }
+
     public static void load() {
-        if (!CONFIG_FILE.exists()) return;
+        if (!CONFIG_FILE.exists()) {
+            return;
+        }
+
         try (FileReader reader = new FileReader(CONFIG_FILE)) {
-            Type type = new TypeToken<Map<String, List<Integer>>>(){}.getType();
+            Type type = new TypeToken<Map<String, List<Integer>>>() {}.getType();
             Map<String, List<Integer>> data = GSON.fromJson(reader, type);
+            if (data == null || data.isEmpty()) {
+                return;
+            }
 
             Minecraft mc = Minecraft.getInstance();
-            if (mc == null || mc.options == null) return;
+            if (mc == null || mc.options == null) {
+                return;
+            }
 
-            // Match the saved translation keys (e.g., "key.jump") to the actual KeyMapping objects
+            MultiKeyRegistry.clear();
+
             for (KeyMapping mapping : mc.options.keyMappings) {
-                String name = mapping.saveString();
-                if (data.containsKey(name)) {
-                    for (int key : data.get(name)) {
-                        MultiKeyRegistry.add(mapping, key);
-                    }
+                List<Integer> keys = data.get(mapping.saveString());
+                if (keys != null && !keys.isEmpty()) {
+                    MultiKeyRegistry.set(mapping, keys);
                 }
             }
         } catch (Exception e) {
@@ -43,10 +53,12 @@ public class KeyBindingStore {
 
     public static void save() {
         try {
-            CONFIG_FILE.getParentFile().mkdirs();
-            Map<String, List<Integer>> data = new HashMap<>();
+            File parent = CONFIG_FILE.getParentFile();
+            if (parent != null) {
+                parent.mkdirs();
+            }
 
-            // Save using the KeyMapping's translation name as the unique ID
+            Map<String, List<Integer>> data = new HashMap<>();
             for (Map.Entry<KeyMapping, List<Integer>> entry : MultiKeyRegistry.raw().entrySet()) {
                 data.put(entry.getKey().saveString(), entry.getValue());
             }
