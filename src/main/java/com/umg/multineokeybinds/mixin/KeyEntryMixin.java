@@ -63,7 +63,8 @@ public class KeyEntryMixin {
                         b -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.screen instanceof KeyBindsScreenExtension ext) {
-                                ext.multikeybinds$startListening(this.key);
+                                // Pass the key code to replace when rebinding
+                                ext.multikeybinds$startListening(this.key, keyCode);
                             }
                         }
                 ).bounds(0, 0, 50, 20).build();
