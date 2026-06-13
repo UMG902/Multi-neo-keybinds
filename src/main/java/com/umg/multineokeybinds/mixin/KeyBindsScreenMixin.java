@@ -21,10 +21,21 @@ public class KeyBindsScreenMixin implements KeyBindsScreenExtension {
     @Unique
     private boolean multikeybinds$listening = false;
 
+    @Unique
+    private Integer multikeybinds$keyToReplace = null;
+
     @Override
     public void multikeybinds$startListening(KeyMapping mapping) {
         this.multikeybinds$current = mapping;
         this.multikeybinds$listening = true;
+        this.multikeybinds$keyToReplace = null;
+    }
+
+    @Override
+    public void multikeybinds$startListening(KeyMapping mapping, Integer keyToReplace) {
+        this.multikeybinds$current = mapping;
+        this.multikeybinds$listening = true;
+        this.multikeybinds$keyToReplace = keyToReplace;
     }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
@@ -36,18 +47,25 @@ public class KeyBindsScreenMixin implements KeyBindsScreenExtension {
         if (keyCode == 256) {
             this.multikeybinds$listening = false;
             this.multikeybinds$current = null;
+            this.multikeybinds$keyToReplace = null;
             cir.setReturnValue(true);
             return;
         }
 
         InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
         if (this.multikeybinds$current != null) {
+            // Remove the old key if we're rebinding
+            if (this.multikeybinds$keyToReplace != null) {
+                MultiKeyRegistry.remove(this.multikeybinds$current, this.multikeybinds$keyToReplace);
+            }
+            // Add the new key
             MultiKeyRegistry.add(this.multikeybinds$current, key.getValue());
             Minecraft.getInstance().options.save();
         }
 
         this.multikeybinds$listening = false;
         this.multikeybinds$current = null;
+        this.multikeybinds$keyToReplace = null;
         cir.setReturnValue(true);
     }
 
@@ -58,6 +76,11 @@ public class KeyBindsScreenMixin implements KeyBindsScreenExtension {
         }
 
         if (this.multikeybinds$current != null) {
+            // Remove the old key if we're rebinding
+            if (this.multikeybinds$keyToReplace != null) {
+                MultiKeyRegistry.remove(this.multikeybinds$current, this.multikeybinds$keyToReplace);
+            }
+            // Add the new key
             InputConstants.Key key = InputConstants.Type.MOUSE.getOrCreate(button);
             MultiKeyRegistry.add(this.multikeybinds$current, key.getValue());
             Minecraft.getInstance().options.save();
@@ -65,6 +88,7 @@ public class KeyBindsScreenMixin implements KeyBindsScreenExtension {
 
         this.multikeybinds$listening = false;
         this.multikeybinds$current = null;
+        this.multikeybinds$keyToReplace = null;
         cir.setReturnValue(true);
     }
 }
